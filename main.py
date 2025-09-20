@@ -2,9 +2,8 @@ from __future__ import annotations
 import argparse, json, logging, os, sys, time
 from typing import Any, Dict, List
 
-from wcl_client import WCLClient
 from config import WCLConfig
-
+from repository import WCLRepository
 log = logging.getLogger("main")
 logging.basicConfig(
     level=os.getenv("LOG_LEVEL", "INFO"),
@@ -66,23 +65,6 @@ def load_config_from_json(path: str) -> WCLConfig:
     cfg.validate()
     return cfg
 
-def fetch_all_reports(client: WCLClient, guild: str, slug: str, region: str) -> List[Dict[str, Any]]:
-    page, out = 1, []
-    while True:
-        block = client.gql(
-            GQL_REPORTS,
-            {
-                "guildName": guild,
-                "guildServerSlug": slug,
-                "guildServerRegion": region,
-                "page": page,
-            },
-        )["reportData"]["reports"]
-        out.extend(block["data"])
-        if not block.get("has_more_pages", False):
-            return out
-        page += 1
-        time.sleep(0.2)
 
 def main():
     ap = argparse.ArgumentParser(description="Dev entry. Will probably be nuked if I decide to actually make this an application.")
@@ -95,9 +77,9 @@ def main():
 
     cfg = load_config_from_json(args.json_config)
 
-    client = WCLClient(site=cfg.site, client_id=cfg.client_id, client_secret=cfg.client_secret)
+    wclrepository = WCLRepository(cfg)
 
-    reports = fetch_all_reports(client, cfg.guild, cfg.server_slug, cfg.server_region)
+    reports = wclrepository.list_guild_reports(cfg.guild, cfg.server_slug, cfg.server_region)
     print(f"Found {len(reports)} reports for {cfg.guild} ({cfg.server_slug}, {cfg.server_region}) on {cfg.site}.warcraftlogs.com")
     for r in reports:
         url = f"https://{cfg.site}.warcraftlogs.com/reports/{r['code']}"

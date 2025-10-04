@@ -1,0 +1,17 @@
+# Core runtime (ETL/CLI)
+requests>=2.31.0
+typer>=0.12.3
+tenacity>=8.2.3
+rich>=13.7.1
+tomli>=2.0.1; python_version < "3.11"
+
+# Data & ML
+pandas>=2.2.0
+pyarrow>=16.0.0
+joblib>=1.4.0
+sklearn
+
+# API
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+pydantic>=2.7.0

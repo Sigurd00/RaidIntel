@@ -1,3 +1,4 @@
-secrets/*
-__pycache__/*
-*.csv
+secrets/
+*.dev.json
+*.secrets.json
+out/

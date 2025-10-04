@@ -1,12 +1,21 @@
 from __future__ import annotations
+import time
 from typing import Any, Dict, Iterable, List
-import time, logging
-
 from .models import Report, Fight, Event
-from config import WCLConfig
 from .wcl_client import WCLClient
 
-log = logging.getLogger(__name__)
+GQL_REPORT_HEADER = """
+query($code:String!){
+  reportData {
+    report(code:$code) {
+      code
+      title
+      startTime
+      endTime
+    }
+  }
+}
+"""
 
 GQL_REPORTS = """
 query($guildName:String!, $guildServerSlug:String!, $guildServerRegion:String!, $page:Int){
@@ -49,8 +58,15 @@ query($code:String!, $dataType:EventDataType!, $startTime:Float!, $endTime:Float
 """
 
 class WCLRepository:
-    def __init__(self, cfg: WCLConfig) -> None:
-        self.client = WCLClient(site=cfg.site, client_id=cfg.client_id, client_secret=cfg.client_secret)
+    def __init__(self, client: WCLClient) -> None:
+        self.client = client
+
+    def get_report_header(self, code: str) -> Report:
+        data = self.client.gql(GQL_REPORT_HEADER, {"code": code})
+        rep = data["reportData"]["report"]
+        if not rep:
+            raise RuntimeError(f"Report not found: {code}")
+        return Report(**rep)
 
     def list_guild_reports(self, guild: str, slug: str, region: str) -> List[Report]:
         page, out = 1, []
@@ -68,8 +84,8 @@ class WCLRepository:
     def get_fights(self, code: str) -> List[Fight]:
         data = self.client.gql(GQL_FIGHTS, {"code": code})
         fights = data["reportData"]["report"]["fights"] or []
-        # valid range only
         return [Fight(**f) for f in fights if f.get("endTime", 0) > f.get("startTime", 0)]
+
     def stream_events(self, code: str, fight_id: int, start: float, end: float, data_type: str, limit: int = 10000) -> Iterable[Event]:
         cur = start
         while True:

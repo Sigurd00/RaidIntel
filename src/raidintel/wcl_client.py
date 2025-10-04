@@ -5,7 +5,6 @@ import requests
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 log = logging.getLogger(__name__)
-
 OAUTH_URL = "https://www.warcraftlogs.com/oauth/token"
 
 class WCLClient:
@@ -47,15 +46,12 @@ class WCLClient:
             self._refresh_token()
         headers = {"Authorization": f"Bearer {self._token}", "Accept":"application/json", "Content-Type":"application/json"}
         resp = self._session.post(self.base_gql, json={"query": query, "variables": variables}, timeout=self.timeout, headers=headers)
-        # Retry on 5xx/429 etc.
         try:
             resp.raise_for_status()
         except requests.HTTPError as e:
-            # Log useful info
             log.warning("HTTP error %s: %s", resp.status_code, getattr(e, "response", None))
             raise
         payload = resp.json()
         if "errors" in payload:
-            # surface GraphQL errors immediately (tenacity won't retry non-HTTP by default)
             raise RuntimeError(f"GraphQL error: {payload['errors']}")
         return payload["data"]

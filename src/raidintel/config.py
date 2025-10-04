@@ -1,11 +1,11 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import List, Optional
-import os, sys
+from typing import List
+import os
 
 try:
     import tomllib  # PY>=3.11
-except ModuleNotFoundError:  # PY<3.11
+except ModuleNotFoundError:
     import tomli as tomllib  # type: ignore
 
 @dataclass
@@ -23,16 +23,15 @@ class WCLConfig:
     def from_toml(path: str) -> "WCLConfig":
         with open(path, "rb") as f:
             data = tomllib.load(f)
-        # env overrides (useful in CI/secrets)
         def env_override(key: str, default):
             return os.getenv(f"WCL_{key.upper()}", data.get(key, default))
         return WCLConfig(
             client_id=env_override("client_id", ""),
             client_secret=env_override("client_secret", ""),
-            site=env_override("site", "www"),
+            site=str(env_override("site", "www")).lower(),
             guild=env_override("guild", ""),
-            server_slug=env_override("server_slug", ""),
-            server_region=env_override("server_region", ""),
+            server_slug=str(env_override("server_slug", "")).strip().lower().replace(" ", "-"),
+            server_region=str(env_override("server_region", "")).lower(),
             output_dir=env_override("output_dir", "out"),
             event_types=env_override("event_types", ["Casts","DamageDone","Healing","Buffs","Debuffs","Deaths","Resources","Threat"]),
         )

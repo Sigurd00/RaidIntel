@@ -13,7 +13,13 @@ from .graph import build_graph, render_ascii
 app = typer.Typer(add_completion=False, help="RaidIntel CLI")
 
 def _ctx(cfg_path: str) -> Context:
-    cfg = WCLConfig.from_toml(cfg_path); cfg.validate()
+    cfg_path_lower = cfg_path.lower()
+    if cfg_path_lower.endswith(".json"):
+        cfg = WCLConfig.from_json(cfg_path)
+    else:
+        cfg = WCLConfig.from_toml(cfg_path)
+
+    cfg.validate()
     client = WCLClient(site=cfg.site, client_id=cfg.client_id, client_secret=cfg.client_secret)
     repo = WCLRepository(client)
     etl = ETLPipeline(cfg.output_dir)
@@ -88,3 +94,6 @@ def build_player_features_cmd(code: str, config: str = typer.Option("examples/ra
 @app.command()
 def prescribe(code: str, config: str = typer.Option("examples/raidintel.toml")):
     c = _ctx(config); Orchestrator(c).ensure(PrescribeImprovements(code)); print("coaching.md written")
+
+if __name__ == "__main__":
+    app()

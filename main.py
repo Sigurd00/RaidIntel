@@ -57,7 +57,7 @@ def main():
     client = WCLClient(site=cfg["site"], client_id=cfg["client_id"], client_secret=cfg["client_secret"])
 
     reports = fetch_all_reports(client, cfg["guild"], cfg["server_slug"], cfg["server_region"])
-    if args.list-reports:
+    if args.list_reports:
         print(f"Found {len(reports)} reports")
         for r in reports:
             print(r["code"], r.get("title",""))

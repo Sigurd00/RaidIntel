@@ -2,6 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import List
 import os
+import json
 
 try:
     import tomllib  # PY>=3.11
@@ -34,6 +35,25 @@ class WCLConfig:
             server_region=str(env_override("server_region", "")).lower(),
             output_dir=env_override("output_dir", "out"),
             event_types=env_override("event_types", ["Casts","DamageDone","Healing","Buffs","Debuffs","Deaths","Resources","Threat"]),
+        )
+
+    @staticmethod
+    def from_json(path: str) -> "WCLConfig":
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        def env_override(key: str, default):
+            return os.getenv(f"WCL_{key.upper()}", data.get(key, default))
+        return WCLConfig(
+            client_id=env_override("client_id", ""),
+            client_secret=env_override("client_secret", ""),
+            site=str(env_override("site", "www")).lower(),
+            guild=env_override("guild", ""),
+            server_slug=str(env_override("server_slug", "")).strip().lower().replace(" ", "-"),
+            server_region=str(env_override("server_region", "")).lower(),
+            output_dir=env_override("output_dir", "out"),
+            event_types=env_override("event_types", [
+                "Casts","DamageDone","Healing","Buffs","Debuffs","Deaths","Resources","Threat"
+            ]),
         )
 
     def validate(self) -> None:
